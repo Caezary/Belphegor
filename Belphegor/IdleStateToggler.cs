@@ -1,6 +1,6 @@
 ﻿namespace Belphegor
 {
-    public class ApplicationState
+    public class IdleStateToggler : IToggleIdle
     {
         private bool _isIdleVerifyEnabled = false;
 

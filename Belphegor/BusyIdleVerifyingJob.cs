@@ -1,8 +1,8 @@
 using System;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Quartz;
+using Serilog;
 
 namespace Belphegor
 {
@@ -11,16 +11,18 @@ namespace Belphegor
     {
         private static readonly TimeSpan IdleTimeout = TimeSpan.FromMinutes(1);
         
-        private readonly ApplicationState _applicationState;
+        private readonly IToggleIdle _idleState;
+        private readonly ILogger _logger;
 
-        public BusyIdleVerifyingJob(ApplicationState applicationState)
+        public BusyIdleVerifyingJob(IToggleIdle idleState)
         {
-            _applicationState = applicationState;
+            _logger = Log.Logger.ForContext<BusyIdleVerifyingJob>();
+            _idleState = idleState;
         }
         
         public Task Execute(IJobExecutionContext context)
         {
-            if (!_applicationState.IsIdleVerifyEnabled())
+            if (!_idleState.IsIdleVerifyEnabled())
             {
                 return Task.CompletedTask;
             }
@@ -28,44 +30,12 @@ namespace Belphegor
             return Task.Run(() =>
             {
                 var idleTime = IdleTimeExtractor.GetIdleTime();
-                Console.WriteLine(idleTime);
+                _logger.Information("Calculated idle time: {idleTime}", idleTime);
                 if (idleTime >= IdleTimeout)
                 {
-                    SendKeys.Send("{SHIFT}");
+                    SendKeys.SendWait("+");
                 }
             });
-        }
-    }
-
-    public class IdleTimeExtractor
-    {
-        [StructLayout( LayoutKind.Sequential )]
-        private struct LASTINPUTINFO
-        {
-            public static readonly int SizeOf = Marshal.SizeOf(typeof(LASTINPUTINFO));
-
-            [MarshalAs(UnmanagedType.U4)]
-            public UInt32 cbSize;    
-            [MarshalAs(UnmanagedType.U4)]
-            public UInt32 dwTime;
-        }
-        
-        [DllImport("user32.dll")]
-        private static extern bool GetLastInputInfo(ref LASTINPUTINFO plii);
-
-        public static TimeSpan GetIdleTime()
-        {
-            var inputInfo = new LASTINPUTINFO();
-            inputInfo.cbSize = (uint) LASTINPUTINFO.SizeOf;
-
-            if (!GetLastInputInfo(ref inputInfo))
-            {
-                return TimeSpan.Zero;
-            }
-
-            var delta = Environment.TickCount - (int) inputInfo.dwTime;
-            
-            return TimeSpan.FromMilliseconds(delta);
         }
     }
 }

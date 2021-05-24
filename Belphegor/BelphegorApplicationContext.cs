@@ -9,14 +9,14 @@ namespace Belphegor
     {
         private const string IconFileName = "resources/demon.ico";
         private readonly Icon _icon = new Icon(IconFileName);
-        private readonly ApplicationState _applicationState;
+        private readonly IToggleIdle _idleToggler;
         private readonly NotifyIcon _notifyIcon;
         private IContainer _components = new Container();
         private ToolStripMenuItem _busyIdleMenuItem;
 
-        public BelphegorApplicationContext(ApplicationState applicationState)
+        public BelphegorApplicationContext(IToggleIdle idleToggler)
         {
-            _applicationState = applicationState;
+            _idleToggler = idleToggler;
             _notifyIcon = new NotifyIcon(_components)
             {
                 ContextMenuStrip = new ContextMenuStrip(),
@@ -43,12 +43,12 @@ namespace Belphegor
 
         private void BusyIdle_Clicked(object sender, EventArgs e)
         {
-            _applicationState.ToggleIdleVerify();
+            _idleToggler.ToggleIdleVerify();
             _busyIdleMenuItem.Text = GetBusyIdleText();
         }
 
         private string GetBusyIdleText() =>
-            $"Busy Idle {(_applicationState.IsIdleVerifyEnabled() ? "Enabled" : "Disabled")}";
+            $"Busy Idle {(_idleToggler.IsIdleVerifyEnabled() ? "Enabled" : "Disabled")}";
 
         protected override void ExitThreadCore()
         {

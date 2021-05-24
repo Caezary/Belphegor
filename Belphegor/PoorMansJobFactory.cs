@@ -6,18 +6,18 @@ namespace Belphegor
 {
     public class PoorMansJobFactory : IJobFactory
     {
-        private readonly ApplicationState _applicationState;
+        private readonly IToggleIdle _idleToggler;
 
-        public PoorMansJobFactory(ApplicationState applicationState)
+        public PoorMansJobFactory(IToggleIdle idleToggler)
         {
-            _applicationState = applicationState;
+            _idleToggler = idleToggler;
         }
         
         public IJob NewJob(TriggerFiredBundle bundle, IScheduler scheduler)
         {
             if (bundle.JobDetail.JobType == typeof(BusyIdleVerifyingJob))
             {
-                return new BusyIdleVerifyingJob(_applicationState);
+                return new BusyIdleVerifyingJob(_idleToggler);
             }
             
             throw new ArgumentException(nameof(bundle.JobDetail.JobType));
